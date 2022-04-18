@@ -1,4 +1,7 @@
 pipeline {
+    environment{
+        imageName = ''
+    }
     agent any
 
     stages {
@@ -13,6 +16,30 @@ pipeline {
             steps{
                 script{
                     sh 'mvn clean install'
+                }
+            }
+        }
+        stage('Step 3 : Build Docker Image') {
+            steps{
+                script{
+                    imageName = docker.build 'chaitanyadevelops/scientific-calculator:latest'
+                }
+            }
+        }
+        stage('Step 4 : Docker Hub Push'){
+            steps {
+                script{
+                    docker.withRegistry('','docker-jenkins'){
+                        imageName.push()
+                    }
+                }
+                
+            }
+        }
+        stage('Step 5 : Ansible Deployment'){
+            steps{
+                script{
+                    ansiblePlaybook becomeUser: null, colorized: true, disableHostKeyChecking: true, installation: 'Ansible', inventory: 'deploy-docker/inventory', playbook: 'deploy-docker/docker-image.yml', sudoUser: null
                 }
             }
         }
